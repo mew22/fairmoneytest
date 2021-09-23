@@ -19,8 +19,14 @@ object Dependency {
         }
 
         object TestExt {
-            private const val VERSION = "1.1.2"
+            private const val VERSION = "1.1.3"
             const val junit = "androidx.test.ext:junit:$VERSION"
+        }
+
+        object Test {
+            private const val VERSION = "1.4.0"
+            const val runner = "androidx.test:runner:$VERSION"
+            const val rules = "androidx.test:rules:$VERSION"
         }
 
         object TestEspresso {
@@ -57,11 +63,13 @@ object Dependency {
         }
     }
 
+    object Jacoco {
+        const val TOOL_VERSION = "0.8.7"
+    }
+
     object JUnit {
         private const val VERSION = "5.8.1"
-        const val junitApi = "org.junit.jupiter:junit-jupiter-api:${VERSION}"
-        const val junitEngine = "org.junit.jupiter:junit-jupiter-engine:${VERSION}"
-        const val junitParams = "org.junit.jupiter:junit-jupiter-params:${VERSION}"
+        const val jupiter = "org.junit.jupiter:junit-jupiter:${VERSION}"
     }
 
     object Mockk {

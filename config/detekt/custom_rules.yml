@@ -1,0 +1,19 @@
+complexity:
+  active: true
+  excludes: '**/test/**,**/androidTest/**,**/*.Test.kt,**/*.Spec.kt,**/*.Spek.kt'
+  LargeClass:
+    active: true
+    threshold: 400
+    excludes: '**/test/**,**/androidTest/**,**/*.Test.kt,**/*.Spec.kt,**/*.Spek.kt'
+  StringLiteralDuplication:
+    active: true
+    threshold: 2
+    excludeStringsWithLessThan5Characters: false
+    excludes: '**/test/**,**/androidTest/**,**/*.Test.kt,**/*.Spec.kt,**/*.Spek.kt'
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 20
+    thresholdInClasses: 20
+    thresholdInInterfaces: 20
+    thresholdInObjects: 20
+    excludes: '**/test/**,**/androidTest/**,**/*.Test.kt,**/*.Spec.kt,**/*.Spek.kt'
