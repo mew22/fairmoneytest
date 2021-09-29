@@ -2,4 +2,17 @@
     <string name="app_name" translatable="false">fairmoneytest</string>
     <string name="cd_user_image">an image here</string>
     <string name="generic_error">Unable to load data</string>
+
+    <string name="first_name_hint">First Name</string>
+    <string name="last_name_hint">Last Name</string>
+    <string name="email_hint">Email</string>
+    <string name="phone_hint">Phone</string>
+    <string name="bithdate_hint">Birthdate</string>
+    <string name="city_hint">City</string>
+    <string name="state_hint">State</string>
+    <string name="street_hint">Street name</string>
+    <string name="country_hint">Country</string>
+    <string name="profile_field_error">Enter at least 2 chars</string>
+    <string name="profile_postal_code_field_error">Format: 00000</string>
+    <string name="profile_street_code_field_error">Format: XX</string>
 </resources>

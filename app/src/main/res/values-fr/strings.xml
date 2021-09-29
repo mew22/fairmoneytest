@@ -1,4 +1,17 @@
 <resources>
     <string name="cd_user_image">une image ici</string>
     <string name="generic_error">Impossible de charger les données</string>
+
+    <string name="first_name_hint">Prenom</string>
+    <string name="last_name_hint">Nom</string>
+    <string name="email_hint">Email</string>
+    <string name="phone_hint">Phone</string>
+    <string name="bithdate_hint">Date de naissance</string>
+    <string name="city_hint">Ville</string>
+    <string name="state_hint">Region</string>
+    <string name="street_hint">Nom de la rue</string>
+    <string name="country_hint">Pays</string>
+    <string name="profile_field_error">Entrer au moins 2 caractères</string>
+    <string name="profile_postal_code_field_error">Format: 00000</string>
+    <string name="profile_street_code_field_error">Format: XX</string>
 </resources>
