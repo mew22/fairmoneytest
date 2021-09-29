@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">fairmoneytest</string>
+    <string name="app_name" translatable="false">fairmoneytest</string>
+    <string name="cd_user_image">an image here</string>
+    <string name="generic_error">Unable to load data</string>
 </resources>

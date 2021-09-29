@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="match_constraint">0dp</dimen>
+
+    <dimen name="item_list_picture_size">50dp</dimen>
+    <dimen name="item_list_text_margin">10dp</dimen>
+    <dimen name="card_item_list_margin">10dp</dimen>
+    <dimen name="card_item_list_corner">20dp</dimen>
+    <dimen name="card_item_list_elevation">0dp</dimen>
+</resources>

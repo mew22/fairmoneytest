@@ -1,0 +1,4 @@
+<resources>
+    <string name="cd_user_image">une image ici</string>
+    <string name="generic_error">Impossible de charger les données</string>
+</resources>
