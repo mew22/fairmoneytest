@@ -107,11 +107,6 @@ class UserDetailViewModelTest {
         every {
             Uri.parse("http://test.com")
         } returns userUri
-
-        userDetailViewModel = UserDetailViewModel(
-            getUserUseCase = getUserDetailUseCase,
-            refreshUseCase = refreshDetailUseCase
-        )
     }
 
     @AfterEach
@@ -130,8 +125,14 @@ class UserDetailViewModelTest {
                 emit(Result.success(fakeUserDetail))
             }
 
+            userDetailViewModel = UserDetailViewModel(
+                getUserUseCase = getUserDetailUseCase,
+                refreshUseCase = refreshDetailUseCase,
+                id = fakeUserDetail.user.id.value
+            )
+
             val result =
-                userDetailViewModel.getUserDetailFromId(fakeUserDetail.user.id.value).first()
+                userDetailViewModel.userDetail.first()
 
             Assertions.assertTrue(result.isSuccess && fakeUserDetailModel == result.getOrNull())
         }
@@ -158,8 +159,14 @@ class UserDetailViewModelTest {
                     emit(Result.failure<UserDetail>(exceptionInstance))
                 }
 
+                userDetailViewModel = UserDetailViewModel(
+                    getUserUseCase = getUserDetailUseCase,
+                    refreshUseCase = refreshDetailUseCase,
+                    id = fakeUserDetail.user.id.value
+                )
+
                 val result =
-                    userDetailViewModel.getUserDetailFromId(fakeUserDetail.user.id.value).first()
+                    userDetailViewModel.userDetail.first()
 
                 Assertions.assertTrue(
                     result.isFailure && result.getOrNull() == null &&
@@ -179,7 +186,19 @@ class UserDetailViewModelTest {
                 emit(Result.success(true))
             }
 
-            val result = userDetailViewModel.refresh(fakeUserDetail.user.id.value).first()
+            every {
+                getUserDetailUseCase(fakeUserDetail.user.id)
+            } returns flow {
+                emit(Result.success(fakeUserDetail))
+            }
+
+            userDetailViewModel = UserDetailViewModel(
+                getUserUseCase = getUserDetailUseCase,
+                refreshUseCase = refreshDetailUseCase,
+                id = fakeUserDetail.user.id.value
+            )
+
+            val result = userDetailViewModel.refresh().first()
             Assertions.assertTrue(result.isSuccess && result.getOrNull() == true)
         }
 
@@ -202,7 +221,19 @@ class UserDetailViewModelTest {
                 refreshDetailUseCase(fakeUserDetail.user.id)
             } returns flow { emit(Result.failure<Boolean>(exceptionInstance)) }
 
-            val result = userDetailViewModel.refresh(fakeUserDetail.user.id.value).first()
+            every {
+                getUserDetailUseCase(fakeUserDetail.user.id)
+            } returns flow {
+                emit(Result.success(fakeUserDetail))
+            }
+
+            userDetailViewModel = UserDetailViewModel(
+                getUserUseCase = getUserDetailUseCase,
+                refreshUseCase = refreshDetailUseCase,
+                id = fakeUserDetail.user.id.value
+            )
+
+            val result = userDetailViewModel.refresh().first()
             Assertions.assertTrue(
                 result.isFailure && result.getOrNull() == null &&
                     result.exceptionOrNull() == exceptionInstance

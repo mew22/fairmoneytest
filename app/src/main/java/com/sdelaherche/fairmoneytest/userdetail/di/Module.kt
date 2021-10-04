@@ -30,8 +30,9 @@ val userDetailModule = module {
         RefreshUserDetailUseCase(userDetailRepository = get())
     }
 
-    viewModel {
+    viewModel { parameters ->
         UserDetailViewModel(
+            id = parameters.get(),
             getUserUseCase = get<GetUserDetailUseCase>(),
             refreshUseCase = get<RefreshUserDetailUseCase>()
         )

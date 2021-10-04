@@ -22,12 +22,13 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
 
 class UserDetailFragment : Fragment() {
 
     private var binding: FragmentUserDetailBinding? = null
     private val args: UserDetailFragmentArgs by navArgs()
-    private val userDetailViewModel: UserDetailViewModel by viewModel()
+    private val userDetailViewModel: UserDetailViewModel by viewModel { parametersOf(args.id) }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,7 +57,7 @@ class UserDetailFragment : Fragment() {
     private fun loadData() {
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                userDetailViewModel.getUserDetailFromId(id = args.id).collectLatest { result ->
+                userDetailViewModel.userDetail.collectLatest { result ->
                     result.fold(
                         onSuccess = {
                             fillUserDetailFields(it)
@@ -77,7 +78,7 @@ class UserDetailFragment : Fragment() {
             it.root.setOnRefreshListener {
                 lifecycleScope.launch {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                        userDetailViewModel.refresh(id = args.id).first().let { result ->
+                        userDetailViewModel.refresh().first().let { result ->
                             result.onFailure {
                                 showError()
                             }

@@ -9,16 +9,17 @@ import kotlinx.coroutines.flow.map
 
 class UserDetailViewModel(
     private val getUserUseCase: ReactiveUseCase<Id, Result<UserDetail>>,
-    private val refreshUseCase: ReactiveUseCase<Id, Result<Boolean>>
+    private val refreshUseCase: ReactiveUseCase<Id, Result<Boolean>>,
+    private val id: String
 ) :
     ViewModel() {
 
-    fun getUserDetailFromId(id: String): Flow<Result<UserDetailModel>> =
+    val userDetail: Flow<Result<UserDetailModel>> =
         getUserUseCase(Id(id)).map { result ->
             result.map {
                 it.toUi()
             }
         }
 
-    fun refresh(id: String): Flow<Result<Boolean>> = refreshUseCase(Id(id))
+    fun refresh(): Flow<Result<Boolean>> = refreshUseCase(Id(id))
 }
