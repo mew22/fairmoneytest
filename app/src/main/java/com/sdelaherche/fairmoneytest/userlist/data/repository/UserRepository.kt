@@ -1,6 +1,8 @@
 package com.sdelaherche.fairmoneytest.userlist.data.repository
 
 import com.sdelaherche.fairmoneytest.common.data.local.IUserLocalDataSource
+import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
+import com.sdelaherche.fairmoneytest.common.domain.failure.LocalInsertionException
 import com.sdelaherche.fairmoneytest.common.data.mapper.toEntity
 import com.sdelaherche.fairmoneytest.common.domain.entity.User
 import com.sdelaherche.fairmoneytest.userlist.data.mapper.toLocal
@@ -40,7 +42,7 @@ class UserRepository(
                 ).data
             ).isNotEmpty()
         )
-    } catch (ex: Exception) {
+    } catch (ex: DomainException) {
         Result.failure(exception = ex)
     }
 

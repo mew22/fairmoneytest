@@ -2,12 +2,14 @@ package com.sdelaherche.fairmoneytest.mockutil
 
 import com.sdelaherche.fairmoneytest.common.domain.entity.Id
 import com.sdelaherche.fairmoneytest.common.domain.failure.ApiException
+import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
+import com.sdelaherche.fairmoneytest.common.domain.failure.LocalInsertionException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
-import com.sdelaherche.fairmoneytest.userdetail.domain.failure.UnknownUserException
+import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 
-fun generateExceptionFromClass(clazz: Class<Exception>, param: Any? = null):
-        Exception = when (clazz) {
+fun generateExceptionFromClass(clazz: Class<DomainException>, param: Any? = null):
+        DomainException = when (clazz) {
     ApiException::class.javaObjectType -> {
         ApiException("any")
     }
@@ -17,11 +19,11 @@ fun generateExceptionFromClass(clazz: Class<Exception>, param: Any? = null):
     UnexpectedException::class.javaObjectType -> {
         UnexpectedException(Exception())
     }
-    UnknownUserException::class.javaObjectType -> {
-        UnknownUserException(param as Id)
+    UserNotFoundException::class.javaObjectType -> {
+        UserNotFoundException(param as Id)
     }
-    else -> {
-        assert(true)
-        Exception()
+    LocalInsertionException::class.javaObjectType -> {
+        LocalInsertionException()
     }
+    else -> UnexpectedException(Exception())
 }

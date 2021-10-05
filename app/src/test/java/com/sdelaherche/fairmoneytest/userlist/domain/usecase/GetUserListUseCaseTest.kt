@@ -5,6 +5,7 @@ import com.sdelaherche.fairmoneytest.common.domain.entity.Name
 import com.sdelaherche.fairmoneytest.common.domain.entity.Title
 import com.sdelaherche.fairmoneytest.common.domain.entity.User
 import com.sdelaherche.fairmoneytest.common.domain.failure.ApiException
+import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
@@ -13,7 +14,6 @@ import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import java.net.URI
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.net.URI
 
 class GetUserListUseCaseTest {
 
@@ -71,10 +72,10 @@ class GetUserListUseCaseTest {
             ]
         )
         fun `Try to spread exception while fetching user list from repository with an error`(
-            exceptionClass: Class<Exception>
+            exceptionClass: Class<DomainException>
         ) =
             runBlocking {
-                val exceptionInstance: Exception = generateExceptionFromClass(exceptionClass)
+                val exceptionInstance: DomainException = generateExceptionFromClass(exceptionClass)
 
                 every {
                     userRepository.getUserList()

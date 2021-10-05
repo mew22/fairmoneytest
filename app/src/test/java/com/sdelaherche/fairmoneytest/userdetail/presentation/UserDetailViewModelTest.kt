@@ -6,6 +6,8 @@ import com.sdelaherche.fairmoneytest.common.domain.entity.Name
 import com.sdelaherche.fairmoneytest.common.domain.entity.Title
 import com.sdelaherche.fairmoneytest.common.domain.entity.User
 import com.sdelaherche.fairmoneytest.common.domain.failure.ApiException
+import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
+import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
@@ -19,7 +21,6 @@ import com.sdelaherche.fairmoneytest.userdetail.domain.entity.State
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.Street
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.TimeZone
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.UserDetail
-import com.sdelaherche.fairmoneytest.userdetail.domain.failure.UnknownUserException
 import com.sdelaherche.fairmoneytest.userdetail.domain.usecase.GetUserDetailUseCase
 import com.sdelaherche.fairmoneytest.userdetail.domain.usecase.RefreshUserDetailUseCase
 import io.mockk.MockKAnnotations
@@ -143,14 +144,14 @@ class UserDetailViewModelTest {
                 ApiException::class,
                 NoInternetException::class,
                 UnexpectedException::class,
-                UnknownUserException::class
+                UserNotFoundException::class
             ]
         )
         fun `Try to spread exception while fetching user detail by its Id from usecase with an error`( // ktlint-disable max-line-length
-            exceptionClass: Class<Exception>
+            exceptionClass: Class<DomainException>
         ) =
             runBlocking {
-                val exceptionInstance: Exception =
+                val exceptionInstance: DomainException =
                     generateExceptionFromClass(exceptionClass, fakeUserDetail.user.id)
 
                 every {
@@ -208,13 +209,13 @@ class UserDetailViewModelTest {
                 ApiException::class,
                 NoInternetException::class,
                 UnexpectedException::class,
-                UnknownUserException::class
+                UserNotFoundException::class
             ]
         )
         fun `Try to refresh user detail model by its Id from usecase with an error`(
-            exceptionClass: Class<Exception>
+            exceptionClass: Class<DomainException>
         ) = runBlocking {
-            val exceptionInstance: Exception =
+            val exceptionInstance: DomainException =
                 generateExceptionFromClass(exceptionClass, fakeUserDetail.user.id)
 
             every {

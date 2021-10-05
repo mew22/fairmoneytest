@@ -9,12 +9,12 @@ import com.sdelaherche.fairmoneytest.common.domain.entity.Name
 import com.sdelaherche.fairmoneytest.common.domain.entity.Title
 import com.sdelaherche.fairmoneytest.common.domain.entity.User
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
+import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 import com.sdelaherche.fairmoneytest.userdetail.data.remote.IUserDetailRemoteService
 import com.sdelaherche.fairmoneytest.userdetail.data.remote.LocationRemoteData
 import com.sdelaherche.fairmoneytest.userdetail.data.remote.UserDetailRemoteData
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.*
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.TimeZone
-import com.sdelaherche.fairmoneytest.userdetail.domain.failure.UnknownUserException
 import com.sdelaherche.fairmoneytest.userdetail.domain.repository.IUserDetailRepository
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -148,7 +148,7 @@ class UserDetailRepositoryTest {
                 userDetailLocalSource.getUserById(userId.value)
             }
             Assertions.assertTrue(
-                result.isFailure && result.exceptionOrNull() == UnknownUserException(userId)
+                result.isFailure && result.exceptionOrNull() == UserNotFoundException(userId)
             )
         }
 
@@ -206,7 +206,7 @@ class UserDetailRepositoryTest {
                 userDetailLocalSource.updateUser(any())
             }
             Assertions.assertTrue(
-                result.isFailure && result.exceptionOrNull() == UnknownUserException(Id(wrongUserId))
+                result.isFailure && result.exceptionOrNull() == UserNotFoundException(Id(wrongUserId))
             )
         }
 
@@ -269,24 +269,29 @@ class UserDetailRepositoryTest {
         }
 
         @Test
-        fun `Try to spread UnknownUserException by refreshing an user detail with a wrong Id and check cache is not altered`() = runBlocking {
-            val wrongUserId = "any"
-            coEvery {
-                userDetailRemoteService.getUserById(wrongUserId)
-            } throws UnknownUserException(Id(wrongUserId))
+        fun `Try to spread UnknownUserException by refreshing an user detail with a wrong Id and check cache is not altered`() =
+            runBlocking {
+                val wrongUserId = "any"
+                coEvery {
+                    userDetailRemoteService.getUserById(wrongUserId)
+                } throws UserNotFoundException(Id(wrongUserId))
 
-            val result = userDetailRepository.refresh(Id(wrongUserId))
+                val result = userDetailRepository.refresh(Id(wrongUserId))
 
-            coVerify(exactly = 1) {
-                userDetailRemoteService.getUserById(wrongUserId)
+                coVerify(exactly = 1) {
+                    userDetailRemoteService.getUserById(wrongUserId)
+                }
+                coVerify(exactly = 0) {
+                    userDetailLocalSource.updateUser(any())
+                }
+                Assertions.assertTrue(
+                    result.isFailure && result.exceptionOrNull() == UserNotFoundException(
+                        Id(
+                            wrongUserId
+                        )
+                    )
+                )
             }
-            coVerify (exactly = 0) {
-                userDetailLocalSource.updateUser(any())
-            }
-            Assertions.assertTrue(
-                result.isFailure && result.exceptionOrNull() == UnknownUserException(Id(wrongUserId))
-            )
-        }
 
         @Test
         fun `Try to spread NoInternetException by refreshing an user detail by its Id without internet`() = runBlocking {

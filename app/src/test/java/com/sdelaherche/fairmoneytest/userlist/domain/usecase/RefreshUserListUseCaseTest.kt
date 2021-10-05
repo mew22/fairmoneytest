@@ -1,6 +1,7 @@
 package com.sdelaherche.fairmoneytest.userlist.domain.usecase
 
 import com.sdelaherche.fairmoneytest.common.domain.failure.ApiException
+import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
@@ -55,9 +56,9 @@ class RefreshUserListUseCaseTest {
                 ApiException::class, NoInternetException::class, UnexpectedException::class
             ]
         )
-        fun `Try to refresh user list from repository with an error`(exceptionClass: Class<Exception>) =
+        fun `Try to refresh user list from repository with an error`(exceptionClass: Class<DomainException>) =
             runBlocking {
-                val exceptionInstance: Exception = generateExceptionFromClass(exceptionClass)
+                val exceptionInstance: DomainException = generateExceptionFromClass(exceptionClass)
 
                 coEvery {
                     userRepository.refresh()

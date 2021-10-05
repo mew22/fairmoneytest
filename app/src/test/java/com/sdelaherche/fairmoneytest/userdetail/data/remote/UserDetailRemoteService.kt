@@ -4,9 +4,9 @@ import com.google.gson.Gson
 import com.sdelaherche.fairmoneytest.common.data.remote.Config
 import com.sdelaherche.fairmoneytest.common.data.remote.ErrorsCallAdapterFactory
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
+import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 import com.sdelaherche.fairmoneytest.mockutil.MockResponseFileReader
 import com.sdelaherche.fairmoneytest.mockutil.enqueueResponse
-import com.sdelaherche.fairmoneytest.userdetail.domain.failure.UnknownUserException
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockWebServer
 import mockwebserver3.RecordedRequest
@@ -62,7 +62,7 @@ class UserDetailRemoteService {
                 "user_detail_remote_mock_response.json",
                 404
             )
-            assertThrows<UnknownUserException> {
+            assertThrows<UserNotFoundException> {
                 remoteService.getUserById(userId)
             }
             checkRequest(userId, mockWebServer.takeRequest())

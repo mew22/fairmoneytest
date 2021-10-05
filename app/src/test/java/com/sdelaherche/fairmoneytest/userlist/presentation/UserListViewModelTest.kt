@@ -6,6 +6,7 @@ import com.sdelaherche.fairmoneytest.common.domain.entity.Name
 import com.sdelaherche.fairmoneytest.common.domain.entity.Title
 import com.sdelaherche.fairmoneytest.common.domain.entity.User
 import com.sdelaherche.fairmoneytest.common.domain.failure.ApiException
+import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
@@ -108,10 +109,10 @@ class UserListViewModelTest {
             ]
         )
         fun `Try to spread exception while fetching user list model from usecase with an error`(
-            exceptionClass: Class<Exception>
+            exceptionClass: Class<DomainException>
         ) =
             runBlocking {
-                val exceptionInstance: Exception = generateExceptionFromClass(exceptionClass)
+                val exceptionInstance: DomainException = generateExceptionFromClass(exceptionClass)
 
                 every {
                     getUserListUseCase()
@@ -159,10 +160,10 @@ class UserListViewModelTest {
             ]
         )
         fun `Try to refresh user list model from usecase with an error`(
-            exceptionClass: Class<Exception>
+            exceptionClass: Class<DomainException>
         ) =
             runBlocking {
-                val exceptionInstance: Exception = generateExceptionFromClass(exceptionClass)
+                val exceptionInstance: DomainException = generateExceptionFromClass(exceptionClass)
 
                 every {
                     getUserListUseCase()

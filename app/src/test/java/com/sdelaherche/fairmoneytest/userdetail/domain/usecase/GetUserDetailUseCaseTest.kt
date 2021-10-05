@@ -7,8 +7,10 @@ import com.sdelaherche.fairmoneytest.common.domain.entity.Name
 import com.sdelaherche.fairmoneytest.common.domain.entity.Title
 import com.sdelaherche.fairmoneytest.common.domain.entity.User
 import com.sdelaherche.fairmoneytest.common.domain.failure.ApiException
+import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
+import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.City
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.Country
@@ -20,14 +22,11 @@ import com.sdelaherche.fairmoneytest.userdetail.domain.entity.State
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.Street
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.TimeZone
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.UserDetail
-import com.sdelaherche.fairmoneytest.userdetail.domain.failure.UnknownUserException
 import com.sdelaherche.fairmoneytest.userdetail.domain.repository.IUserDetailRepository
 import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import java.net.URI
-import java.util.Date
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
@@ -38,6 +37,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.net.URI
+import java.util.*
 
 class GetUserDetailUseCaseTest {
 
@@ -99,14 +100,15 @@ class GetUserDetailUseCaseTest {
                 ApiException::class,
                 NoInternetException::class,
                 UnexpectedException::class,
-                UnknownUserException::class
+                UserNotFoundException::class
             ]
         )
         fun `Try to spread exception while fetching an user detail by its Id from repository with an error`(
-            exceptionClass: Class<Exception>
+            exceptionClass: Class<DomainException>
         ) = runBlocking {
             val userId = Id("any")
-            val exceptionInstance: Exception = generateExceptionFromClass(exceptionClass, userId)
+            val exceptionInstance: DomainException =
+                generateExceptionFromClass(exceptionClass, userId)
 
             every {
                 userDetailRepository.getUserById(userId)
@@ -120,9 +122,9 @@ class GetUserDetailUseCaseTest {
                     result.exceptionOrNull() == exceptionInstance
             )
 
-            if (exceptionClass == UnknownUserException::class.javaObjectType) {
+            if (exceptionClass == UserNotFoundException::class.javaObjectType) {
                 Assertions.assertTrue(
-                    (exceptionInstance as UnknownUserException).userId == userId
+                    (exceptionInstance as UserNotFoundException).userId == userId
                 )
             }
         }

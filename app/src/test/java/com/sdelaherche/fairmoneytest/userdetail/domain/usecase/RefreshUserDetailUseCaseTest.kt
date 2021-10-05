@@ -4,8 +4,8 @@ import com.sdelaherche.fairmoneytest.common.domain.entity.Id
 import com.sdelaherche.fairmoneytest.common.domain.failure.ApiException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
+import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
-import com.sdelaherche.fairmoneytest.userdetail.domain.failure.UnknownUserException
 import com.sdelaherche.fairmoneytest.userdetail.domain.repository.IUserDetailRepository
 import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
@@ -57,16 +57,16 @@ class RefreshUserDetailUseCaseTest {
         @ValueSource(
             classes = [
                 ApiException::class, NoInternetException::class,
-                UnexpectedException::class, UnknownUserException::class
+                UnexpectedException::class, UserNotFoundException::class
             ]
         )
 
         fun `Try to refresh user by its Id from repository with an error`(
-            exceptionClass: Class<Exception>
+            exceptionClass: Class<DomainException>
         ) =
             runBlocking {
                 val userId = Id("any")
-                val exceptionInstance: Exception =
+                val exceptionInstance: DomainException =
                     generateExceptionFromClass(exceptionClass, userId)
 
                 coEvery {
@@ -79,9 +79,9 @@ class RefreshUserDetailUseCaseTest {
                             result.exceptionOrNull() == exceptionInstance
                 )
 
-                if (exceptionClass == UnknownUserException::class.javaObjectType) {
+                if (exceptionClass == UserNotFoundException::class.javaObjectType) {
                     Assertions.assertTrue(
-                        (exceptionInstance as UnknownUserException).userId == userId
+                        (exceptionInstance as UserNotFoundException).userId == userId
                     )
                 }
 
