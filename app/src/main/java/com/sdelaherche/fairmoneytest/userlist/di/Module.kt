@@ -8,6 +8,7 @@ import com.sdelaherche.fairmoneytest.userlist.domain.repository.IUserRepository
 import com.sdelaherche.fairmoneytest.userlist.domain.usecase.GetUserListUseCase
 import com.sdelaherche.fairmoneytest.userlist.domain.usecase.RefreshUserListUseCase
 import com.sdelaherche.fairmoneytest.userlist.presentation.UserListViewModel
+import org.koin.android.ext.koin.androidApplication
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import retrofit2.Retrofit
@@ -33,7 +34,8 @@ val userListModule = module {
     viewModel {
         UserListViewModel(
             getUserListUseCase = get<GetUserListUseCase>(),
-            refreshListUseCase = get<RefreshUserListUseCase>()
+            refreshListUseCase = get<RefreshUserListUseCase>(),
+            application = androidApplication()
         )
     }
 }

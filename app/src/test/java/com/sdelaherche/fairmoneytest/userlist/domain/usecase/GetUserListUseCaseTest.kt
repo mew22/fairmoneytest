@@ -9,6 +9,9 @@ import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.Refreshing
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.RefreshingError
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserList
 import com.sdelaherche.fairmoneytest.userlist.domain.repository.IUserRepository
 import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
@@ -33,6 +36,20 @@ class GetUserListUseCaseTest {
 
     private lateinit var getUserListUseCase: GetUserListUseCase
 
+    private val fakeUserList = mutableListOf<User>().apply {
+        for (i in 0 until 10) {
+            add(
+                User(
+                    id = Id("id$i"),
+                    title = Title("title"),
+                    firstName = Name("firstName"),
+                    lastName = Name("lastName"),
+                    picture = URI.create("http://test.com")
+                )
+            )
+        }
+    }
+
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
@@ -48,22 +65,28 @@ class GetUserListUseCaseTest {
     inner class GetUserList {
         @Test
         fun `Try to fetch user list from repository without error`() = runBlocking {
-            val fakeUser = User(
-                id = Id("id"),
-                title = Title("title"),
-                firstName = Name("firstName"),
-                lastName = Name("lastName"),
-                picture = URI.create("http://test.com")
-            )
             every {
                 userRepository.getUserList()
             } returns flow {
-                emit(Result.success(listOf(fakeUser)))
+                emit(UserList(list = fakeUserList))
             }
 
             val result = getUserListUseCase().first()
-            assertTrue(result.isSuccess && result.getOrNull()?.contains(fakeUser) == true)
+            assertTrue(result is UserList && result.list == fakeUserList)
         }
+
+        @Test
+        fun `Try to provide refreshing state while fetching user list from repository without cache`() =
+            runBlocking {
+                every {
+                    userRepository.getUserList()
+                } returns flow {
+                    emit(Refreshing)
+                }
+
+                val result = getUserListUseCase().first()
+                assertTrue(result is Refreshing)
+            }
 
         @ParameterizedTest
         @ValueSource(
@@ -80,13 +103,12 @@ class GetUserListUseCaseTest {
                 every {
                     userRepository.getUserList()
                 } returns flow {
-                    emit(Result.failure<List<User>>(exceptionInstance))
+                    emit(RefreshingError(exceptionInstance))
                 }
 
                 val result = getUserListUseCase().first()
                 assertTrue(
-                    result.isFailure && result.getOrNull()
-                        .isNullOrEmpty() && result.exceptionOrNull() == exceptionInstance
+                    result is RefreshingError && result.ex == exceptionInstance
                 )
             }
     }

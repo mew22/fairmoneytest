@@ -8,6 +8,7 @@ import com.sdelaherche.fairmoneytest.userdetail.domain.repository.IUserDetailRep
 import com.sdelaherche.fairmoneytest.userdetail.domain.usecase.GetUserDetailUseCase
 import com.sdelaherche.fairmoneytest.userdetail.domain.usecase.RefreshUserDetailUseCase
 import com.sdelaherche.fairmoneytest.userdetail.presentation.UserDetailViewModel
+import org.koin.android.ext.koin.androidApplication
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import retrofit2.Retrofit
@@ -34,7 +35,8 @@ val userDetailModule = module {
         UserDetailViewModel(
             id = parameters.get(),
             getUserUseCase = get<GetUserDetailUseCase>(),
-            refreshUseCase = get<RefreshUserDetailUseCase>()
+            refreshUseCase = get<RefreshUserDetailUseCase>(),
+            application = androidApplication()
         )
     }
 }

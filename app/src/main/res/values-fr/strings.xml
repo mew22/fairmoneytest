@@ -1,6 +1,12 @@
 <resources>
     <string name="cd_user_image">une image ici</string>
+
+    <string name="generic_success">Données téléchargées</string>
     <string name="generic_error">Impossible de charger les données</string>
+    <string name="internet_error">Pas de connexion internet</string>
+    <string name="server_error">Erreur du serveur, veuillez réessayer</string>
+    <string name="local_error">Erreur d\'insertion en database, veuillez réessayer</string>
+    <string name="user_not_found_error">Utilisateur introuvable</string>
 
     <string name="first_name_hint">Prenom</string>
     <string name="last_name_hint">Nom</string>

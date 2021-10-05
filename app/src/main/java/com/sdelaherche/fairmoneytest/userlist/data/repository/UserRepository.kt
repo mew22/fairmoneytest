@@ -8,9 +8,13 @@ import com.sdelaherche.fairmoneytest.common.domain.entity.User
 import com.sdelaherche.fairmoneytest.userlist.data.mapper.toLocal
 import com.sdelaherche.fairmoneytest.userlist.data.remote.IUserRemoteService
 import com.sdelaherche.fairmoneytest.userlist.data.remote.UserRemoteData
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.Refreshing
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.RefreshingError
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserList
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserListResponse
 import com.sdelaherche.fairmoneytest.userlist.domain.repository.IUserRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.map
 
 class UserRepository(
     private val remoteSource: IUserRemoteService,
@@ -22,14 +26,15 @@ class UserRepository(
         private const val NUMBER_OF_USERS_PER_PAGE = 50
     }
 
-    override fun getUserList(): Flow<Result<List<User>>> =
-        localSource.getUsers().mapNotNull {
+    override fun getUserList(): Flow<UserListResponse> =
+        localSource.getUsers().map {
             if (it.isNullOrEmpty()) {
-                refresh().exceptionOrNull()?.let { throwable ->
-                    Result.failure(throwable)
-                }
+                refresh().fold(
+                    onSuccess = { Refreshing},
+                    onFailure = {ex -> RefreshingError(ex as DomainException)}
+                )
             } else {
-                Result.success(it.toEntity())
+                UserList(list = it.toEntity())
             }
         }
 

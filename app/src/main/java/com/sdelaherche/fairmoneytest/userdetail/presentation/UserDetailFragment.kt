@@ -13,13 +13,12 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.navArgs
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
-import com.google.android.material.snackbar.Snackbar
 import com.sdelaherche.fairmoneytest.R
+import com.sdelaherche.fairmoneytest.common.presentation.showError
 import com.sdelaherche.fairmoneytest.databinding.FragmentUserDetailBinding
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.Gender
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -57,15 +56,20 @@ class UserDetailFragment : Fragment() {
     private fun loadData() {
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                userDetailViewModel.userDetail.collectLatest { result ->
-                    result.fold(
-                        onSuccess = {
-                            fillUserDetailFields(it)
-                        },
-                        onFailure = {
-                            showError()
+                userDetailViewModel.userDetail.collectLatest { response ->
+                    when (response) {
+                        is Success -> {
+                            binding?.root?.isRefreshing = false
+                            fillUserDetailFields(response.detail)
                         }
-                    )
+                        is Failure -> {
+                            binding?.root?.isRefreshing = false
+                            showError(binding, response.message)
+                        }
+                        is Loading -> {
+                            binding?.root?.isRefreshing = true
+                        }
+                    }
                     // stop Progress indicator
                     setProgressVisibility(View.GONE)
                 }
@@ -80,7 +84,7 @@ class UserDetailFragment : Fragment() {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                         userDetailViewModel.refresh().first().let { result ->
                             result.onFailure {
-                                showError()
+                                showError(binding)
                             }
                             it.root.isRefreshing = false
                             this@launch.cancel()
@@ -146,12 +150,6 @@ class UserDetailFragment : Fragment() {
             Gender.MALE -> {
                 view.setColorFilter(Color.BLUE)
             }
-        }
-    }
-
-    private fun showError() {
-        binding?.let {
-            Snackbar.make(it.root, R.string.generic_error, Snackbar.LENGTH_LONG).show()
         }
     }
 }

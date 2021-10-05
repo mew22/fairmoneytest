@@ -11,6 +11,9 @@ import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.userlist.data.remote.IUserRemoteService
 import com.sdelaherche.fairmoneytest.userlist.data.remote.ResponseRemoteData
 import com.sdelaherche.fairmoneytest.userlist.data.remote.UserRemoteData
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.Refreshing
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.RefreshingError
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserList
 import com.sdelaherche.fairmoneytest.userlist.domain.repository.IUserRepository
 import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
@@ -19,16 +22,18 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.verify
-import java.net.URI
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import java.net.URI
 
 class UserRepositoryTest {
 
@@ -112,7 +117,7 @@ class UserRepositoryTest {
             verify(exactly = 1) {
                 userLocalSource.getUsers()
             }
-            Assertions.assertEquals(fakeUserList, result.getOrNull())
+            Assertions.assertTrue(result is UserList && result.list == fakeUserList)
         }
 
         @Test
@@ -138,7 +143,9 @@ class UserRepositoryTest {
                     }
                 }
 
-                val result = userRepository.getUserList().first()
+                val result = userRepository.getUserList().take(2).toList()
+                val shouldReturnRefreshing = result[0]
+                val shouldReturnList = result[1]
 
                 verify(exactly = 1) {
                     userLocalSource.getUsers()
@@ -150,12 +157,14 @@ class UserRepositoryTest {
                     userLocalSource.insertUserList(fakeUserDataList)
                 }
                 Assertions.assertTrue(
-                    result.isSuccess && result.getOrNull() == fakeUserList
+                    shouldReturnRefreshing is Refreshing &&
+                            shouldReturnList is UserList && shouldReturnList.list == fakeUserList
                 )
             }
 
         @Test
-        fun `Try to spread a NoInternetException while fetching a list of user without cache and without internet`() = // ktlint-disable max-line-length
+        fun `Try to spread a NoInternetException while fetching a list of user without cache and without internet`() =
+            // ktlint-disable max-line-length
             runBlocking {
                 every {
                     userLocalSource.getUsers()
@@ -180,12 +189,13 @@ class UserRepositoryTest {
                 }
 
                 Assertions.assertTrue(
-                    result.isFailure && result.exceptionOrNull() == NoInternetException()
+                    result is RefreshingError && result.ex == NoInternetException()
                 )
             }
 
         @Test
-        fun `Try to spread a ApiException while fetching a list of user without cache and without internet`() = // ktlint-disable max-line-length
+        fun `Try to spread a ApiException while fetching a list of user without cache and without internet`() =
+            // ktlint-disable max-line-length
             runBlocking {
                 every {
                     userLocalSource.getUsers()
@@ -210,7 +220,7 @@ class UserRepositoryTest {
                 }
 
                 Assertions.assertTrue(
-                    result.isFailure && result.exceptionOrNull() == ApiException("404")
+                    result is RefreshingError && result.ex == ApiException("404")
                 )
             }
     }

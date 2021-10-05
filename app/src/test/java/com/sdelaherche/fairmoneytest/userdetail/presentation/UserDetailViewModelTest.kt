@@ -1,5 +1,6 @@
 package com.sdelaherche.fairmoneytest.userdetail.presentation
 
+import android.app.Application
 import android.net.Uri
 import com.sdelaherche.fairmoneytest.common.domain.entity.Id
 import com.sdelaherche.fairmoneytest.common.domain.entity.Name
@@ -11,6 +12,9 @@ import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
+import com.sdelaherche.fairmoneytest.userdetail.domain.Detail
+import com.sdelaherche.fairmoneytest.userdetail.domain.Refreshing
+import com.sdelaherche.fairmoneytest.userdetail.domain.RefreshingError
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.City
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.Country
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.EmailAddress
@@ -27,12 +31,9 @@ import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
-import java.net.URI
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
@@ -43,6 +44,9 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.net.URI
+import java.text.SimpleDateFormat
+import java.util.*
 
 class UserDetailViewModelTest {
 
@@ -52,11 +56,13 @@ class UserDetailViewModelTest {
     @MockK
     private lateinit var refreshDetailUseCase: RefreshUserDetailUseCase
 
-    private lateinit var userDetailViewModel: UserDetailViewModel
+    @RelaxedMockK
+    private lateinit var application: Application
 
     @MockK
     private lateinit var userUri: Uri
 
+    private lateinit var userDetailViewModel: UserDetailViewModel
     private val birthdate = Date()
     private val registerDate = Date()
     private val updatedDate = Date()
@@ -123,19 +129,31 @@ class UserDetailViewModelTest {
             every {
                 getUserDetailUseCase(fakeUserDetail.user.id)
             } returns flow {
-                emit(Result.success(fakeUserDetail))
+                emit(Detail(detail = fakeUserDetail))
             }
 
-            userDetailViewModel = UserDetailViewModel(
-                getUserUseCase = getUserDetailUseCase,
-                refreshUseCase = refreshDetailUseCase,
-                id = fakeUserDetail.user.id.value
-            )
+            initViewModel()
 
             val result =
                 userDetailViewModel.userDetail.first()
 
-            Assertions.assertTrue(result.isSuccess && fakeUserDetailModel == result.getOrNull())
+            Assertions.assertTrue(result is Success && fakeUserDetailModel == result.detail)
+        }
+
+        @Test
+        fun `Try to provide loading state while fetching user detail model from usecase without cache`() = runBlocking {
+            every {
+                getUserDetailUseCase(fakeUserDetail.user.id)
+            } returns flow {
+                emit(Refreshing)
+            }
+
+            initViewModel()
+
+            val result =
+                userDetailViewModel.userDetail.first()
+
+            Assertions.assertTrue(result is Loading)
         }
 
         @ParameterizedTest
@@ -157,21 +175,16 @@ class UserDetailViewModelTest {
                 every {
                     getUserDetailUseCase(fakeUserDetail.user.id)
                 } returns flow {
-                    emit(Result.failure<UserDetail>(exceptionInstance))
+                    emit(RefreshingError(exceptionInstance))
                 }
 
-                userDetailViewModel = UserDetailViewModel(
-                    getUserUseCase = getUserDetailUseCase,
-                    refreshUseCase = refreshDetailUseCase,
-                    id = fakeUserDetail.user.id.value
-                )
+                initViewModel()
 
                 val result =
                     userDetailViewModel.userDetail.first()
 
                 Assertions.assertTrue(
-                    result.isFailure && result.getOrNull() == null &&
-                        result.exceptionOrNull() == exceptionInstance
+                    result is Failure
                 )
             }
     }
@@ -190,14 +203,10 @@ class UserDetailViewModelTest {
             every {
                 getUserDetailUseCase(fakeUserDetail.user.id)
             } returns flow {
-                emit(Result.success(fakeUserDetail))
+                emit(Detail(detail = fakeUserDetail))
             }
 
-            userDetailViewModel = UserDetailViewModel(
-                getUserUseCase = getUserDetailUseCase,
-                refreshUseCase = refreshDetailUseCase,
-                id = fakeUserDetail.user.id.value
-            )
+            initViewModel()
 
             val result = userDetailViewModel.refresh().first()
             Assertions.assertTrue(result.isSuccess && result.getOrNull() == true)
@@ -225,14 +234,9 @@ class UserDetailViewModelTest {
             every {
                 getUserDetailUseCase(fakeUserDetail.user.id)
             } returns flow {
-                emit(Result.success(fakeUserDetail))
+                emit(Detail(detail = fakeUserDetail))
             }
-
-            userDetailViewModel = UserDetailViewModel(
-                getUserUseCase = getUserDetailUseCase,
-                refreshUseCase = refreshDetailUseCase,
-                id = fakeUserDetail.user.id.value
-            )
+            initViewModel()
 
             val result = userDetailViewModel.refresh().first()
             Assertions.assertTrue(
@@ -240,5 +244,14 @@ class UserDetailViewModelTest {
                     result.exceptionOrNull() == exceptionInstance
             )
         }
+    }
+
+    private fun initViewModel() {
+        userDetailViewModel = UserDetailViewModel(
+            getUserUseCase = getUserDetailUseCase,
+            refreshUseCase = refreshDetailUseCase,
+            id = fakeUserDetail.user.id.value,
+            application = application
+        )
     }
 }

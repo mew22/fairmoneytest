@@ -13,12 +13,14 @@ import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 import com.sdelaherche.fairmoneytest.userdetail.data.remote.IUserDetailRemoteService
 import com.sdelaherche.fairmoneytest.userdetail.data.remote.LocationRemoteData
 import com.sdelaherche.fairmoneytest.userdetail.data.remote.UserDetailRemoteData
+import com.sdelaherche.fairmoneytest.userdetail.domain.Detail
+import com.sdelaherche.fairmoneytest.userdetail.domain.Refreshing
+import com.sdelaherche.fairmoneytest.userdetail.domain.RefreshingError
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.*
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.TimeZone
 import com.sdelaherche.fairmoneytest.userdetail.domain.repository.IUserDetailRepository
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
@@ -131,7 +133,7 @@ class UserDetailRepositoryTest {
             verify(exactly = 1) {
                 userDetailLocalSource.getUserById(fakeUserData.id)
             }
-            Assertions.assertEquals(fakeUserDetail, result.getOrNull())
+            Assertions.assertTrue(result is Detail && result.detail == fakeUserDetail)
         }
 
         @Test
@@ -148,96 +150,106 @@ class UserDetailRepositoryTest {
                 userDetailLocalSource.getUserById(userId.value)
             }
             Assertions.assertTrue(
-                result.isFailure && result.exceptionOrNull() == UserNotFoundException(userId)
+                result is RefreshingError && result.ex == UserNotFoundException(userId)
             )
         }
 
         @Test
-        fun `Try to fetch an user detail by its Id without cache and store it in cache`() = runBlocking {
+        fun `Try to fetch an user detail by its Id without cache and store it in cache`() =
+            runBlocking {
 
-            val flow = MutableStateFlow(fakeInitialUserData)
+                val flow = MutableStateFlow(fakeInitialUserData)
 
-            every {
-                userDetailLocalSource.getUserById(fakeInitialUserData.id)
-            } returns flow
+                every {
+                    userDetailLocalSource.getUserById(fakeInitialUserData.id)
+                } returns flow
 
-            coEvery {
-                userDetailRemoteService.getUserById(fakeInitialUserData.id)
-            } returns fakeUserDetailRemoteData
+                coEvery {
+                    userDetailRemoteService.getUserById(fakeInitialUserData.id)
+                } returns fakeUserDetailRemoteData
 
-            coEvery {
-                userDetailLocalSource.updateUser(fakeUserData)
-            } coAnswers {
-                flow.value = fakeUserData
-                1 // return of updateUser
+                coEvery {
+                    userDetailLocalSource.updateUser(fakeUserData)
+                } coAnswers {
+                    flow.value = fakeUserData
+                    1 // return of updateUser
+                }
+
+                val result = userDetailRepository.getUserById(Id(fakeInitialUserData.id)).take(2).toList()
+                val shouldReturnRefreshing = result[0]
+                val shouldReturnDetail = result[1]
+
+                verify(exactly = 1) {
+                    userDetailLocalSource.getUserById(fakeInitialUserData.id)
+                }
+                coVerify(exactly = 1) {
+                    userDetailRemoteService.getUserById(fakeInitialUserData.id)
+                }
+                coVerify(exactly = 1) {
+                    userDetailLocalSource.updateUser(fakeUserData)
+                }
+                Assertions.assertTrue(
+                    shouldReturnRefreshing is Refreshing &&
+                            shouldReturnDetail is Detail && shouldReturnDetail.detail == fakeUserDetail
+                )
             }
-
-            val result = userDetailRepository.getUserById(Id(fakeInitialUserData.id)).first()
-
-            verify(exactly = 1) {
-                userDetailLocalSource.getUserById(fakeInitialUserData.id)
-            }
-            coVerify(exactly = 1) {
-                userDetailRemoteService.getUserById(fakeInitialUserData.id)
-            }
-            coVerify(exactly = 1) {
-                userDetailLocalSource.updateUser(fakeUserData)
-            }
-            Assertions.assertTrue(
-                result.isSuccess && result.getOrNull() == fakeUserDetail
-            )
-        }
 
         @Test
-        fun `Try to fetch an user detail with a wrong Id without cache and check cache is not altered`() = runBlocking {
-            val wrongUserId = "any"
-            every {
-                userDetailLocalSource.getUserById(wrongUserId)
-            } returns flow{
-                emit(null)
-            }
+        fun `Try to fetch an user detail with a wrong Id without cache and check cache is not altered`() =
+            runBlocking {
+                val wrongUserId = "any"
+                every {
+                    userDetailLocalSource.getUserById(wrongUserId)
+                } returns flow {
+                    emit(null)
+                }
 
-            val result = userDetailRepository.getUserById(Id(wrongUserId)).first()
+                val result = userDetailRepository.getUserById(Id(wrongUserId)).first()
 
-            verify(exactly = 1) {
-                userDetailLocalSource.getUserById(wrongUserId)
+                verify(exactly = 1) {
+                    userDetailLocalSource.getUserById(wrongUserId)
+                }
+                coVerify(exactly = 0) {
+                    userDetailLocalSource.updateUser(any())
+                }
+                Assertions.assertTrue(
+                    result is RefreshingError && result.ex == UserNotFoundException(
+                        Id(
+                            wrongUserId
+                        )
+                    )
+                )
             }
-            coVerify (exactly = 0) {
-                userDetailLocalSource.updateUser(any())
-            }
-            Assertions.assertTrue(
-                result.isFailure && result.exceptionOrNull() == UserNotFoundException(Id(wrongUserId))
-            )
-        }
 
         @Test
-        fun `Try to fetch an user detail by its Id without cache and without internet`() = runBlocking {
-            every {
-                userDetailLocalSource.getUserById(fakeInitialUserData.id)
-            } returns flow{
-                emit(fakeInitialUserData)
-            }
+        fun `Try to fetch an user detail by its Id without cache and without internet`() =
+            runBlocking {
+                every {
+                    userDetailLocalSource.getUserById(fakeInitialUserData.id)
+                } returns flow {
+                    emit(fakeInitialUserData)
+                }
 
-            coEvery {
-                userDetailRemoteService.getUserById(fakeInitialUserData.id)
-            } throws NoInternetException()
+                coEvery {
+                    userDetailRemoteService.getUserById(fakeInitialUserData.id)
+                } throws NoInternetException()
 
-            val result = userDetailRepository.getUserById(Id(fakeInitialUserData.id)).first()
+                val result = userDetailRepository.getUserById(Id(fakeInitialUserData.id)).first()
 
-            verify(exactly = 1) {
-                userDetailLocalSource.getUserById(fakeInitialUserData.id)
-            }
-            coVerify(exactly = 1) {
-                userDetailRemoteService.getUserById(fakeInitialUserData.id)
-            }
-            coVerify (exactly = 0) {
-                userDetailLocalSource.updateUser(any())
-            }
+                verify(exactly = 1) {
+                    userDetailLocalSource.getUserById(fakeInitialUserData.id)
+                }
+                coVerify(exactly = 1) {
+                    userDetailRemoteService.getUserById(fakeInitialUserData.id)
+                }
+                coVerify(exactly = 0) {
+                    userDetailLocalSource.updateUser(any())
+                }
 
-            Assertions.assertTrue(
-                result.isFailure && result.exceptionOrNull() == NoInternetException()
-            )
-        }
+                Assertions.assertTrue(
+                    result is RefreshingError && result.ex == NoInternetException()
+                )
+            }
     }
 
     @Nested

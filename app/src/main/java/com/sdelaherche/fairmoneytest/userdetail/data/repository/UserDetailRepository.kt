@@ -8,25 +8,30 @@ import com.sdelaherche.fairmoneytest.userdetail.data.mapper.toEntity
 import com.sdelaherche.fairmoneytest.userdetail.data.mapper.toLocal
 import com.sdelaherche.fairmoneytest.userdetail.data.remote.IUserDetailRemoteService
 import com.sdelaherche.fairmoneytest.userdetail.data.remote.UserDetailRemoteData
-import com.sdelaherche.fairmoneytest.userdetail.domain.entity.UserDetail
+import com.sdelaherche.fairmoneytest.userdetail.domain.Detail
+import com.sdelaherche.fairmoneytest.userdetail.domain.Refreshing
+import com.sdelaherche.fairmoneytest.userdetail.domain.RefreshingError
+import com.sdelaherche.fairmoneytest.userdetail.domain.UserDetailResponse
 import com.sdelaherche.fairmoneytest.userdetail.domain.repository.IUserDetailRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.map
 
 class UserDetailRepository(
     private val remoteSource: IUserDetailRemoteService,
     private val localSource: IUserLocalDataSource
 ) : IUserDetailRepository {
 
-    override fun getUserById(id: Id): Flow<Result<UserDetail>> =
-        localSource.getUserById(id.value).mapNotNull {
+    override fun getUserById(id: Id): Flow<UserDetailResponse> =
+        localSource.getUserById(id.value).map {
             if (it != null) {
                 it.toEntity()?.let { entity ->
-                    Result.success(entity)
-                } ?: refresh(id).exceptionOrNull()
-                    ?.let { throwable -> Result.failure(throwable) }
+                    Detail(detail = entity)
+                } ?: refresh(id).fold(
+                    onSuccess = {Refreshing},
+                    onFailure = {ex -> RefreshingError(ex as DomainException)}
+                )
             } else {
-                Result.failure(exception = UserNotFoundException(id))
+                RefreshingError(ex = UserNotFoundException(id))
             }
         }
 

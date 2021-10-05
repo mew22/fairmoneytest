@@ -9,9 +9,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.snackbar.Snackbar
-import com.sdelaherche.fairmoneytest.R
 import com.sdelaherche.fairmoneytest.databinding.FragmentUserListBinding
+import com.sdelaherche.fairmoneytest.common.presentation.showError
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
@@ -47,7 +46,7 @@ class UserListFragment : Fragment() {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                         userListViewModel.refresh().first().let { result ->
                             result.onFailure {
-                                showError()
+                                showError(binding)
                             }
                             it.root.isRefreshing = false
                             this@launch.cancel()
@@ -70,24 +69,23 @@ class UserListFragment : Fragment() {
             binding?.recyclerUserList?.adapter = this
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    userListViewModel.userList.collectLatest { userListPage ->
-                        userListPage.fold(
-                            onSuccess = {
-                                this@with.submitList(it)
-                            },
-                            onFailure = {
-                                showError()
+                    userListViewModel.userList.collectLatest { response ->
+                        when (response) {
+                            is Success -> {
+                                binding?.root?.isRefreshing = false
+                                this@with.submitList(response.list)
                             }
-                        )
+                            is Failure -> {
+                                binding?.root?.isRefreshing = false
+                                showError(binding, response.message)
+                            }
+                            is Loading -> {
+                                binding?.root?.isRefreshing = true
+                            }
+                        }
                     }
                 }
             }
-        }
-    }
-
-    private fun showError() {
-        binding?.let {
-            Snackbar.make(it.root, R.string.generic_error, Snackbar.LENGTH_LONG).show()
         }
     }
 }

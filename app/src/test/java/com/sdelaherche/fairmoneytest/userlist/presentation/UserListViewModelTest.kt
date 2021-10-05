@@ -1,5 +1,6 @@
 package com.sdelaherche.fairmoneytest.userlist.presentation
 
+import android.app.Application
 import android.net.Uri
 import com.sdelaherche.fairmoneytest.common.domain.entity.Id
 import com.sdelaherche.fairmoneytest.common.domain.entity.Name
@@ -10,15 +11,18 @@ import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.Refreshing
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.RefreshingError
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserList
 import com.sdelaherche.fairmoneytest.userlist.domain.usecase.GetUserListUseCase
 import com.sdelaherche.fairmoneytest.userlist.domain.usecase.RefreshUserListUseCase
 import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.impl.annotations.RelaxedMockK
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
-import java.net.URI
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
@@ -29,6 +33,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.net.URI
 
 class UserListViewModelTest {
 
@@ -37,6 +42,9 @@ class UserListViewModelTest {
 
     @MockK
     private lateinit var refreshListUseCase: RefreshUserListUseCase
+
+    @RelaxedMockK
+    private lateinit var application: Application
 
     private lateinit var userListViewModel: UserListViewModel
 
@@ -92,14 +100,29 @@ class UserListViewModelTest {
             every {
                 getUserListUseCase()
             } returns flow {
-                emit(Result.success(fakeUserList))
+                emit(UserList(list = fakeUserList))
             }
 
             initViewModel()
 
             val result = userListViewModel.userList.first()
 
-            Assertions.assertTrue(result.isSuccess && fakeUserUiModelList == result.getOrNull())
+            Assertions.assertTrue(result is Success && fakeUserUiModelList == result.list)
+        }
+
+        @Test
+        fun `Try to provide loading state while fetching user list model from usecase without cache`() = runBlocking {
+            every {
+                getUserListUseCase()
+            } returns flow {
+                emit(Refreshing)
+            }
+
+            initViewModel()
+
+            val result = userListViewModel.userList.first()
+
+            Assertions.assertTrue(result is Loading)
         }
 
         @ParameterizedTest
@@ -117,7 +140,7 @@ class UserListViewModelTest {
                 every {
                     getUserListUseCase()
                 } returns flow {
-                    emit(Result.failure<List<User>>(exceptionInstance))
+                    emit(RefreshingError(ex = exceptionInstance))
                 }
 
                 initViewModel()
@@ -125,8 +148,7 @@ class UserListViewModelTest {
                 val result = userListViewModel.userList.first()
 
                 Assertions.assertTrue(
-                    result.isFailure && result.getOrNull()
-                        .isNullOrEmpty() && result.exceptionOrNull() == exceptionInstance
+                    result is Failure
                 )
             }
     }
@@ -138,7 +160,7 @@ class UserListViewModelTest {
             every {
                 getUserListUseCase()
             } returns flow {
-                emit(Result.success(fakeUserList))
+                emit(UserList(list = fakeUserList))
             }
 
             every {
@@ -168,7 +190,7 @@ class UserListViewModelTest {
                 every {
                     getUserListUseCase()
                 } returns flow {
-                    emit(Result.success(fakeUserList))
+                    emit(UserList(list = fakeUserList))
                 }
 
                 every {
@@ -188,7 +210,8 @@ class UserListViewModelTest {
     private fun initViewModel() {
         userListViewModel = UserListViewModel(
             getUserListUseCase = getUserListUseCase,
-            refreshListUseCase = refreshListUseCase
+            refreshListUseCase = refreshListUseCase,
+            application = application
         )
     }
 }

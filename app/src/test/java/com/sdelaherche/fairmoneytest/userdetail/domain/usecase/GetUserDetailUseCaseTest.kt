@@ -12,6 +12,9 @@ import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
+import com.sdelaherche.fairmoneytest.userdetail.domain.Detail
+import com.sdelaherche.fairmoneytest.userdetail.domain.Refreshing
+import com.sdelaherche.fairmoneytest.userdetail.domain.RefreshingError
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.City
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.Country
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.EmailAddress
@@ -47,6 +50,29 @@ class GetUserDetailUseCaseTest {
 
     private lateinit var getUserDetailUseCase: GetUserDetailUseCase
 
+    private val fakeUserDetail = UserDetail(
+        user = User(
+            id = Id("id"),
+            title = Title("title"),
+            firstName = Name("firstName"),
+            lastName = Name("lastName"),
+            picture = URI.create("http://test.com")
+        ),
+        gender = Gender.MALE,
+        email = EmailAddress("email@email.com"),
+        phone = PhoneNumber("0123456789"),
+        birthDate = Date(),
+        registerDate = Date(),
+        updatedDate = Date(),
+        location = Location(
+            street = Street("street"),
+            city = City("city"),
+            state = State("state"),
+            country = Country("country"),
+            timezone = TimeZone("timezone")
+        )
+    )
+
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
@@ -62,37 +88,29 @@ class GetUserDetailUseCaseTest {
     inner class GetUserDetail {
         @Test
         fun `Try to fetch an user detail by its Id from repository without error`() = runBlocking {
-            val fakeUserDetail = UserDetail(
-                user = User(
-                    id = Id("id"),
-                    title = Title("title"),
-                    firstName = Name("firstName"),
-                    lastName = Name("lastName"),
-                    picture = URI.create("http://test.com")
-                ),
-                gender = Gender.MALE,
-                email = EmailAddress("email@email.com"),
-                phone = PhoneNumber("0123456789"),
-                birthDate = Date(),
-                registerDate = Date(),
-                updatedDate = Date(),
-                location = Location(
-                    street = Street("street"),
-                    city = City("city"),
-                    state = State("state"),
-                    country = Country("country"),
-                    timezone = TimeZone("timezone")
-                )
-            )
+
             every {
                 userDetailRepository.getUserById(fakeUserDetail.user.id)
             } returns flow {
-                emit(Result.success(fakeUserDetail))
+                emit(Detail(detail = fakeUserDetail))
             }
 
             val result = getUserDetailUseCase(fakeUserDetail.user.id).first()
-            Assertions.assertTrue(result.isSuccess && result.getOrNull() == fakeUserDetail)
+            Assertions.assertTrue(result is Detail && result.detail == fakeUserDetail)
         }
+
+        @Test
+        fun `Try to provide refreshing state while fetching user detail entity from repository without cache`() =
+            runBlocking {
+                every {
+                    userDetailRepository.getUserById(fakeUserDetail.user.id)
+                } returns flow {
+                    emit(Refreshing)
+                }
+
+                val result = getUserDetailUseCase(fakeUserDetail.user.id).first()
+                Assertions.assertTrue(result is Refreshing)
+            }
 
         @ParameterizedTest
         @ValueSource(
@@ -113,13 +131,13 @@ class GetUserDetailUseCaseTest {
             every {
                 userDetailRepository.getUserById(userId)
             } returns flow {
-                emit(Result.failure<UserDetail>(exceptionInstance))
+                emit(RefreshingError(exceptionInstance))
             }
 
             val result = getUserDetailUseCase(userId).first()
             Assertions.assertTrue(
-                result.isFailure && result.getOrNull() == null &&
-                    result.exceptionOrNull() == exceptionInstance
+                result is RefreshingError &&
+                        result.ex == exceptionInstance
             )
 
             if (exceptionClass == UserNotFoundException::class.javaObjectType) {

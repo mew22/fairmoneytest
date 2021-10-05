@@ -1,7 +1,13 @@
 <resources>
     <string name="app_name" translatable="false">fairmoneytest</string>
     <string name="cd_user_image">an image here</string>
+
+    <string name="generic_success">Data successfully load</string>
     <string name="generic_error">Unable to load data</string>
+    <string name="internet_error">No internet connexion</string>
+    <string name="server_error">Server error, please retry</string>
+    <string name="local_error">Local insertion error, please retry</string>
+    <string name="user_not_found_error">User not found</string>
 
     <string name="first_name_hint">First Name</string>
     <string name="last_name_hint">Last Name</string>
