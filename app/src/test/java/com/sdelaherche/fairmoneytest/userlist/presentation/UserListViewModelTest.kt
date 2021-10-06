@@ -10,6 +10,8 @@ import com.sdelaherche.fairmoneytest.common.domain.failure.ApiException
 import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshFailure
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshSuccess
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.Refreshing
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.RefreshingError
@@ -18,6 +20,7 @@ import com.sdelaherche.fairmoneytest.userlist.domain.usecase.GetUserListUseCase
 import com.sdelaherche.fairmoneytest.userlist.domain.usecase.RefreshUserListUseCase
 import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
@@ -163,16 +166,14 @@ class UserListViewModelTest {
                 emit(UserList(list = fakeUserList))
             }
 
-            every {
+            coEvery {
                 refreshListUseCase()
-            } returns flow {
-                emit(Result.success(true))
-            }
+            } returns Result.success(Unit)
 
             initViewModel()
 
-            val result = userListViewModel.refresh().first()
-            Assertions.assertTrue(result.isSuccess && result.getOrNull() == true)
+            val result = userListViewModel.refresh()
+            Assertions.assertTrue(result is RefreshSuccess)
         }
 
         @ParameterizedTest
@@ -193,16 +194,15 @@ class UserListViewModelTest {
                     emit(UserList(list = fakeUserList))
                 }
 
-                every {
+                coEvery {
                     refreshListUseCase()
-                } returns flow { emit(Result.failure<Boolean>(exceptionInstance)) }
+                } returns Result.failure(exceptionInstance)
 
                 initViewModel()
 
-                val result = userListViewModel.refresh().first()
+                val result = userListViewModel.refresh()
                 Assertions.assertTrue(
-                    result.isFailure && result.getOrNull() == null &&
-                    result.exceptionOrNull() == exceptionInstance
+                    result is RefreshFailure
                 )
             }
     }

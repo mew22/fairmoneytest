@@ -10,7 +10,6 @@ import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -44,10 +43,10 @@ class RefreshUserListUseCaseTest {
         fun `Try to refresh user list from repository without error`() = runBlocking {
             coEvery {
                 userRepository.refresh()
-            } returns Result.success(true)
+            } returns Result.success(Unit)
 
-            val result = refreshUserListUseCase().first()
-            Assertions.assertTrue(result.isSuccess && result.getOrNull() == true)
+            val result = refreshUserListUseCase()
+            Assertions.assertTrue(result.isSuccess)
         }
 
         @ParameterizedTest
@@ -62,9 +61,9 @@ class RefreshUserListUseCaseTest {
 
                 coEvery {
                     userRepository.refresh()
-                } returns Result.failure<Boolean>(exceptionInstance)
+                } returns Result.failure(exceptionInstance)
 
-                val result = refreshUserListUseCase().first()
+                val result = refreshUserListUseCase()
                 Assertions.assertTrue(
                     result.isFailure && result.getOrNull() == null && result.exceptionOrNull() == exceptionInstance
                 )

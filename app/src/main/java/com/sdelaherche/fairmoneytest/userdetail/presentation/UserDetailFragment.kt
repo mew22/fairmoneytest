@@ -13,8 +13,11 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.navArgs
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshFailure
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshSuccess
 import com.sdelaherche.fairmoneytest.R
 import com.sdelaherche.fairmoneytest.common.presentation.showError
+import com.sdelaherche.fairmoneytest.common.presentation.showMessage
 import com.sdelaherche.fairmoneytest.databinding.FragmentUserDetailBinding
 import com.sdelaherche.fairmoneytest.userdetail.domain.entity.Gender
 import kotlinx.coroutines.cancel
@@ -82,9 +85,14 @@ class UserDetailFragment : Fragment() {
             it.root.setOnRefreshListener {
                 lifecycleScope.launch {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                        userDetailViewModel.refresh().first().let { result ->
-                            result.onFailure {
-                                showError(binding)
+                        userDetailViewModel.refresh().let { response ->
+                            when(response) {
+                                is RefreshSuccess -> {
+                                    showMessage(binding, response.message)
+                                }
+                                is RefreshFailure -> {
+                                    showError(binding, response.message)
+                                }
                             }
                             it.root.isRefreshing = false
                             this@launch.cancel()

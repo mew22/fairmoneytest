@@ -275,7 +275,7 @@ class UserDetailRepositoryTest {
             }
 
             Assertions.assertTrue(
-                result.isSuccess && result.getOrNull() == true
+                result.isSuccess
             )
 
         }
@@ -306,24 +306,25 @@ class UserDetailRepositoryTest {
             }
 
         @Test
-        fun `Try to spread NoInternetException by refreshing an user detail by its Id without internet`() = runBlocking {
+        fun `Try to spread NoInternetException by refreshing an user detail by its Id without internet`() =
+            runBlocking {
 
-            coEvery {
-                userDetailRemoteService.getUserById(fakeInitialUserData.id)
-            } throws NoInternetException()
+                coEvery {
+                    userDetailRemoteService.getUserById(fakeInitialUserData.id)
+                } throws NoInternetException()
 
-            val result = userDetailRepository.refresh(Id(fakeInitialUserData.id))
+                val result = userDetailRepository.refresh(Id(fakeInitialUserData.id))
 
-            coVerify(exactly = 1) {
-                userDetailRemoteService.getUserById(fakeInitialUserData.id)
+                coVerify(exactly = 1) {
+                    userDetailRemoteService.getUserById(fakeInitialUserData.id)
+                }
+                coVerify(exactly = 0) {
+                    userDetailLocalSource.updateUser(any())
+                }
+
+                Assertions.assertTrue(
+                    result.isFailure && result.exceptionOrNull() == NoInternetException()
+                )
             }
-            coVerify (exactly = 0) {
-                userDetailLocalSource.updateUser(any())
-            }
-
-            Assertions.assertTrue(
-                result.isFailure && result.exceptionOrNull() == NoInternetException()
-            )
-        }
     }
 }

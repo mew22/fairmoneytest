@@ -11,6 +11,8 @@ import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshFailure
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshSuccess
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
 import com.sdelaherche.fairmoneytest.userdetail.domain.Detail
 import com.sdelaherche.fairmoneytest.userdetail.domain.Refreshing
@@ -29,6 +31,7 @@ import com.sdelaherche.fairmoneytest.userdetail.domain.usecase.GetUserDetailUseC
 import com.sdelaherche.fairmoneytest.userdetail.domain.usecase.RefreshUserDetailUseCase
 import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.impl.annotations.RelaxedMockK
@@ -194,11 +197,9 @@ class UserDetailViewModelTest {
         @Test
         fun `Try to refresh user detail model by its Id`() = runBlocking {
 
-            every {
+            coEvery {
                 refreshDetailUseCase(fakeUserDetail.user.id)
-            } returns flow {
-                emit(Result.success(true))
-            }
+            } returns Result.success(Unit)
 
             every {
                 getUserDetailUseCase(fakeUserDetail.user.id)
@@ -208,8 +209,8 @@ class UserDetailViewModelTest {
 
             initViewModel()
 
-            val result = userDetailViewModel.refresh().first()
-            Assertions.assertTrue(result.isSuccess && result.getOrNull() == true)
+            val result = userDetailViewModel.refresh()
+            Assertions.assertTrue(result is RefreshSuccess)
         }
 
         @ParameterizedTest
@@ -227,9 +228,9 @@ class UserDetailViewModelTest {
             val exceptionInstance: DomainException =
                 generateExceptionFromClass(exceptionClass, fakeUserDetail.user.id)
 
-            every {
+            coEvery {
                 refreshDetailUseCase(fakeUserDetail.user.id)
-            } returns flow { emit(Result.failure<Boolean>(exceptionInstance)) }
+            } returns Result.failure(exceptionInstance)
 
             every {
                 getUserDetailUseCase(fakeUserDetail.user.id)
@@ -238,10 +239,9 @@ class UserDetailViewModelTest {
             }
             initViewModel()
 
-            val result = userDetailViewModel.refresh().first()
+            val result = userDetailViewModel.refresh()
             Assertions.assertTrue(
-                result.isFailure && result.getOrNull() == null &&
-                    result.exceptionOrNull() == exceptionInstance
+                result is RefreshFailure
             )
         }
     }

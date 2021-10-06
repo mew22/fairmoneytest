@@ -5,5 +5,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface IUserRepository {
     fun getUserList(): Flow<UserListResponse>
-    suspend fun refresh(): Result<Boolean>
+    suspend fun refresh(): Result<Unit>
 }

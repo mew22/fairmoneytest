@@ -2,6 +2,7 @@ package com.sdelaherche.fairmoneytest.userdetail.data.repository
 
 import com.sdelaherche.fairmoneytest.common.data.local.IUserLocalDataSource
 import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
+import com.sdelaherche.fairmoneytest.common.domain.failure.LocalInsertionException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
 import com.sdelaherche.fairmoneytest.common.domain.entity.Id
 import com.sdelaherche.fairmoneytest.userdetail.data.mapper.toEntity
@@ -35,8 +36,13 @@ class UserDetailRepository(
             }
         }
 
-    override suspend fun refresh(id: Id): Result<Boolean> = try {
-        Result.success(insertFromRemote(remoteSource.getUserById(id.value)) != 0)
+    override suspend fun refresh(id: Id): Result<Unit> = try {
+        if (insertFromRemote(remoteSource.getUserById(id.value)) != 0) {
+            Result.success(Unit)
+        } else {
+            Result.failure(LocalInsertionException())
+        }
+
     } catch (ex: DomainException) {
         Result.failure(exception = ex)
     }

@@ -38,18 +38,23 @@ class UserRepository(
             }
         }
 
-    override suspend fun refresh(): Result<Boolean> = try {
-        Result.success(
-            insertFromRemote(
+    override suspend fun refresh(): Result<Unit> =
+        try {
+            val result = insertFromRemote(
                 data = remoteSource.getUsers(
                     INITIAL_PAGE,
                     NUMBER_OF_USERS_PER_PAGE
                 ).data
             ).isNotEmpty()
-        )
-    } catch (ex: DomainException) {
-        Result.failure(exception = ex)
-    }
+
+            if (result) {
+                Result.success(Unit)
+            } else {
+                Result.failure(LocalInsertionException())
+            }
+        } catch (ex: DomainException) {
+            Result.failure(ex)
+        }
 
     private suspend fun insertFromRemote(data: List<UserRemoteData>): List<Long> =
         localSource.insertUserList(data.toLocal())

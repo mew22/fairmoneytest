@@ -9,11 +9,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshFailure
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshSuccess
 import com.sdelaherche.fairmoneytest.databinding.FragmentUserListBinding
 import com.sdelaherche.fairmoneytest.common.presentation.showError
+import com.sdelaherche.fairmoneytest.common.presentation.showMessage
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -44,9 +46,14 @@ class UserListFragment : Fragment() {
             it.root.setOnRefreshListener {
                 lifecycleScope.launch {
                     lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                        userListViewModel.refresh().first().let { result ->
-                            result.onFailure {
-                                showError(binding)
+                        userListViewModel.refresh().let { response ->
+                            when(response) {
+                                is RefreshSuccess -> {
+                                    showMessage(binding, response.message)
+                                }
+                                is RefreshFailure -> {
+                                    showError(binding, response.message)
+                                }
                             }
                             it.root.isRefreshing = false
                             this@launch.cancel()

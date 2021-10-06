@@ -2,6 +2,7 @@ package com.sdelaherche.fairmoneytest.userdetail.domain.usecase
 
 import com.sdelaherche.fairmoneytest.common.domain.entity.Id
 import com.sdelaherche.fairmoneytest.common.domain.failure.ApiException
+import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UserNotFoundException
@@ -11,7 +12,6 @@ import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -47,10 +47,10 @@ class RefreshUserDetailUseCaseTest {
             val userId = Id("any")
             coEvery {
                 userDetailRepository.refresh(userId)
-            } returns Result.success(true)
+            } returns Result.success(Unit)
 
-            val result = refreshUserDetailUseCase(userId).first()
-            Assertions.assertTrue(result.isSuccess && result.getOrNull() == true)
+            val result = refreshUserDetailUseCase(userId)
+            Assertions.assertTrue(result.isSuccess)
         }
 
         @ParameterizedTest
@@ -71,9 +71,9 @@ class RefreshUserDetailUseCaseTest {
 
                 coEvery {
                     userDetailRepository.refresh(userId)
-                } returns Result.failure<Boolean>(exceptionInstance)
+                } returns Result.failure(exceptionInstance)
 
-                val result = refreshUserDetailUseCase(userId).first()
+                val result = refreshUserDetailUseCase(userId)
                 Assertions.assertTrue(
                     result.isFailure && result.getOrNull() == null &&
                             result.exceptionOrNull() == exceptionInstance

@@ -9,3 +9,7 @@ interface ReactiveUseCase<in U, T> : UseCase<U, Flow<T>> {
 interface UseCase<in U, T> {
     operator fun invoke(params: U? = null): T
 }
+
+interface SuspendUseCase<in U, T> {
+    suspend operator fun invoke(params: U? = null): T
+}

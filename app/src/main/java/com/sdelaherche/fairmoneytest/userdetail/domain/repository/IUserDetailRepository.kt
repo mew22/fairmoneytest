@@ -6,5 +6,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface IUserDetailRepository {
     fun getUserById(id: Id): Flow<UserDetailResponse>
-    suspend fun refresh(id: Id): Result<Boolean>
+    suspend fun refresh(id: Id): Result<Unit>
 }

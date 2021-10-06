@@ -5,17 +5,21 @@ import androidx.lifecycle.AndroidViewModel
 import com.sdelaherche.fairmoneytest.R
 import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.usecase.ReactiveUseCase
+import com.sdelaherche.fairmoneytest.common.domain.usecase.SuspendUseCase
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshFailure
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshResponseModel
+import com.sdelaherche.fairmoneytest.common.presentation.RefreshSuccess
+import com.sdelaherche.fairmoneytest.common.presentation.getErrorMessageFromException
+import com.sdelaherche.fairmoneytest.userlist.domain.entity.Refreshing
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import com.sdelaherche.fairmoneytest.userlist.domain.entity.Refreshing
-import com.sdelaherche.fairmoneytest.common.presentation.getErrorMessageFromException
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.RefreshingError
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserList
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserListResponse
 
 class UserListViewModel(
     getUserListUseCase: ReactiveUseCase<Unit, UserListResponse>,
-    private val refreshListUseCase: ReactiveUseCase<Unit, Result<Boolean>>,
+    private val refreshListUseCase: SuspendUseCase<Unit, Result<Unit>>,
     application: Application
 ) :
     AndroidViewModel(application) {
@@ -34,5 +38,20 @@ class UserListViewModel(
         }
     }
 
-    fun refresh(): Flow<Result<Boolean>> = refreshListUseCase()
+    suspend fun refresh(): RefreshResponseModel = refreshListUseCase().fold(
+        onSuccess = {
+            RefreshSuccess(
+                message =
+                getApplication<Application>().getString(R.string.generic_success)
+            )
+        },
+        onFailure = { ex ->
+            RefreshFailure(
+                message = getErrorMessageFromException(
+                    ex as DomainException,
+                    getApplication()
+                )
+            )
+        }
+    )
 }

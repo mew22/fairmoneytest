@@ -250,7 +250,7 @@ class UserRepositoryTest {
             }
 
             Assertions.assertTrue(
-                result.isSuccess && result.getOrNull() == true
+                result.isSuccess
             )
         }
 
