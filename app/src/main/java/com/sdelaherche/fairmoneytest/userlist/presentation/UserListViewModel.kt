@@ -10,14 +10,17 @@ import com.sdelaherche.fairmoneytest.common.presentation.RefreshFailure
 import com.sdelaherche.fairmoneytest.common.presentation.RefreshResponseModel
 import com.sdelaherche.fairmoneytest.common.presentation.RefreshSuccess
 import com.sdelaherche.fairmoneytest.common.presentation.getErrorMessageFromException
+import com.sdelaherche.fairmoneytest.common.util.Result
+import com.sdelaherche.fairmoneytest.common.util.fold
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.Refreshing
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.RefreshingError
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserList
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserListResponse
-import com.sdelaherche.fairmoneytest.common.util.Result
-import com.sdelaherche.fairmoneytest.common.util.fold
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 class UserListViewModel(
     getUserListUseCase: ReactiveUseCase<Unit, UserListResponse>,
@@ -38,22 +41,24 @@ class UserListViewModel(
                 Success(list = result.list.toUi())
             }
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
-    suspend fun refresh(): RefreshResponseModel = refreshListUseCase().fold(
-        onSuccess = {
-            RefreshSuccess(
-                message =
-                getApplication<Application>().getString(R.string.generic_success)
-            )
-        },
-        onFailure = { ex ->
-            RefreshFailure(
-                message = getErrorMessageFromException(
-                    ex as DomainException,
-                    getApplication()
+    suspend fun refresh(): RefreshResponseModel = withContext(Dispatchers.IO) {
+        refreshListUseCase().fold(
+            onSuccess = {
+                RefreshSuccess(
+                    message =
+                    getApplication<Application>().getString(R.string.generic_success)
                 )
-            )
-        }
-    )
+            },
+            onFailure = { ex ->
+                RefreshFailure(
+                    message = getErrorMessageFromException(
+                        ex as DomainException,
+                        getApplication()
+                    )
+                )
+            }
+        )
+    }
 }

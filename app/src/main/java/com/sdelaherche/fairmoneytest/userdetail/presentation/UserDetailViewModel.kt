@@ -11,14 +11,17 @@ import com.sdelaherche.fairmoneytest.common.presentation.RefreshFailure
 import com.sdelaherche.fairmoneytest.common.presentation.RefreshResponseModel
 import com.sdelaherche.fairmoneytest.common.presentation.RefreshSuccess
 import com.sdelaherche.fairmoneytest.common.presentation.getErrorMessageFromException
-import com.sdelaherche.fairmoneytest.userdetail.domain.Detail
-import com.sdelaherche.fairmoneytest.userdetail.domain.Refreshing
 import com.sdelaherche.fairmoneytest.common.util.Result
 import com.sdelaherche.fairmoneytest.common.util.fold
+import com.sdelaherche.fairmoneytest.userdetail.domain.Detail
+import com.sdelaherche.fairmoneytest.userdetail.domain.Refreshing
 import com.sdelaherche.fairmoneytest.userdetail.domain.RefreshingError
 import com.sdelaherche.fairmoneytest.userdetail.domain.UserDetailResponse
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 class UserDetailViewModel(
     private val getUserUseCase: ReactiveUseCase<Id, UserDetailResponse>,
@@ -43,17 +46,19 @@ class UserDetailViewModel(
                     Success(detail = result.detail.toUi())
                 }
             }
-        }
+        }.flowOn(Dispatchers.IO)
 
-    suspend fun refresh(): RefreshResponseModel = refreshUseCase(Id(id)).fold(
-        onSuccess = { RefreshSuccess(message = getApplication<Application>().getString(R.string.generic_success)) },
-        onFailure = { ex ->
-            RefreshFailure(
-                message = getErrorMessageFromException(
-                    ex as DomainException,
-                    getApplication()
+    suspend fun refresh(): RefreshResponseModel = withContext(Dispatchers.IO) {
+        refreshUseCase(Id(id)).fold(
+            onSuccess = { RefreshSuccess(message = getApplication<Application>().getString(R.string.generic_success)) },
+            onFailure = { ex ->
+                RefreshFailure(
+                    message = getErrorMessageFromException(
+                        ex as DomainException,
+                        getApplication()
+                    )
                 )
-            )
-        }
-    )
+            }
+        )
+    }
 }
