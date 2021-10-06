@@ -4,7 +4,8 @@ import com.sdelaherche.fairmoneytest.common.data.local.IUserLocalDataSource
 import com.sdelaherche.fairmoneytest.common.domain.failure.DomainException
 import com.sdelaherche.fairmoneytest.common.domain.failure.LocalInsertionException
 import com.sdelaherche.fairmoneytest.common.data.mapper.toEntity
-import com.sdelaherche.fairmoneytest.common.domain.entity.User
+import com.sdelaherche.fairmoneytest.common.util.Result
+import com.sdelaherche.fairmoneytest.common.util.fold
 import com.sdelaherche.fairmoneytest.userlist.data.mapper.toLocal
 import com.sdelaherche.fairmoneytest.userlist.data.remote.IUserRemoteService
 import com.sdelaherche.fairmoneytest.userlist.data.remote.UserRemoteData

@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.map
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.RefreshingError
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserList
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.UserListResponse
+import com.sdelaherche.fairmoneytest.common.util.Result
+import com.sdelaherche.fairmoneytest.common.util.fold
 
 class UserListViewModel(
     getUserListUseCase: ReactiveUseCase<Unit, UserListResponse>,

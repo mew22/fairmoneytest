@@ -2,6 +2,7 @@ package com.sdelaherche.fairmoneytest.userdetail.domain.usecase
 
 import com.sdelaherche.fairmoneytest.common.domain.entity.Id
 import com.sdelaherche.fairmoneytest.common.domain.usecase.SuspendUseCase
+import com.sdelaherche.fairmoneytest.common.util.Result
 import com.sdelaherche.fairmoneytest.userdetail.domain.repository.IUserDetailRepository
 
 class RefreshUserDetailUseCase(private val userDetailRepository: IUserDetailRepository) :

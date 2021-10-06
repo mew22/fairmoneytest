@@ -13,6 +13,8 @@ import com.sdelaherche.fairmoneytest.common.presentation.RefreshSuccess
 import com.sdelaherche.fairmoneytest.common.presentation.getErrorMessageFromException
 import com.sdelaherche.fairmoneytest.userdetail.domain.Detail
 import com.sdelaherche.fairmoneytest.userdetail.domain.Refreshing
+import com.sdelaherche.fairmoneytest.common.util.Result
+import com.sdelaherche.fairmoneytest.common.util.fold
 import com.sdelaherche.fairmoneytest.userdetail.domain.RefreshingError
 import com.sdelaherche.fairmoneytest.userdetail.domain.UserDetailResponse
 import kotlinx.coroutines.flow.Flow

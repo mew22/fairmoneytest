@@ -12,6 +12,7 @@ import com.sdelaherche.fairmoneytest.common.domain.failure.NoInternetException
 import com.sdelaherche.fairmoneytest.common.domain.failure.UnexpectedException
 import com.sdelaherche.fairmoneytest.common.presentation.RefreshFailure
 import com.sdelaherche.fairmoneytest.common.presentation.RefreshSuccess
+import com.sdelaherche.fairmoneytest.common.util.Result
 import com.sdelaherche.fairmoneytest.mockutil.generateExceptionFromClass
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.Refreshing
 import com.sdelaherche.fairmoneytest.userlist.domain.entity.RefreshingError
